@@ -7,7 +7,7 @@
     #include <sys/socket.h>
 #endif
 
-// Чтоб линковалась DLL библиотека для работы с сокетом
+// DLL library for working with socket will linked
 #pragma comment(lib, "Ws2_32.lib")
 
 enum class ResponceCodes
@@ -34,11 +34,11 @@ int main()
         return result;
     }
 
-    // структура слушающего сокета с инфо о IP адресе
+    // structure of listening socket with IP info
     addrinfo* addr = nullptr;
     
-    // создаем и заполняем шаблон для инициализации структуры
-    // "структура слушающего сокета с инфо о IP адресе"
+    // create and fill template for initialization
+    // "structure of listening socket with IP info"
     addrinfo hints;
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
@@ -46,8 +46,8 @@ int main()
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_PASSIVE;
 
-    // инициализировать структура с помощью шаблона
-    result = getaddrinfo("127.0.0.1", "80", &hints, &addr);
+    // initialize structure with help of template
+    result = getaddrinfo("127.0.0.1", "80", &hints, &addr); // local IP + default HTTP port
     if (result != 0)
     {
         std::cout << "getaddrinfo() error" << std::endl;
@@ -85,6 +85,8 @@ int main()
         return result;
     }
 
+    // server handle only ONE request then shut down
+    // add loop while(1){accept....} for handling all time
     int clientSocket = accept(listenSocket, NULL, NULL);
     if (clientSocket == INVALID_SOCKET)
     {
@@ -164,14 +166,14 @@ ResponceCodes handleGet(std::stringstream& answerBody)
                 << "<head><title>done</title></head>"
 
                 << "<body>"
-                << "<font color=\"green\" face=\"arial\" size=\"6\">"
-                << "You sent GET request to fetch data from server but server has not data to return =)"
-                << "</font>"
+                <<   "<font color=\"green\" face=\"arial\" size=\"6\">"
+                <<     "You sent GET request to fetch data from server but server has not data to return =)"
+                <<   "</font>"
                 << "</body>"
 
                 << "</html>";
 
-    return ResponceCodes::_100;
+    return ResponceCodes::_200;
 }
 
 ResponceCodes handlePut(std::stringstream& answerBody)
