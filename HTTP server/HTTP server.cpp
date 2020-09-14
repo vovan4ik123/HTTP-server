@@ -132,30 +132,25 @@ ResponceCodes handleRequest(const char* buf, int bufSize, std::stringstream& ans
 {
     const int methodNameLength = 6;
     std::string methodName(buf, methodNameLength);
-    std::cout << "methodName:" << methodName << std::endl;
 
     if (methodName.find("POST") != std::string::npos)
     {
         // POST ask change in state or side effects on the server.
-        std::cout << "POST received" << std::endl;
         return handlePost(answerBody);
     }
     else if (methodName.find("PUT") != std::string::npos)
     {
         // PUT ask replace all current representations of the target resource.
-        std::cout << "PUT received" << std::endl;
         return handlePut(answerBody);
     }
     else if (methodName.find("DELETE") != std::string::npos)
     {
         // DELETE ask delete the specified resource.
-        std::cout << "DELETE received" << std::endl;
         return handleDelete(answerBody);
     }
     else if (methodName.find("GET") != std::string::npos)
     {
         // GET ask for representation of the specified resource. Only retrieve data.
-        std::cout << "GET received" << std::endl;
         return handleGet(answerBody);
     }
 
@@ -164,30 +159,68 @@ ResponceCodes handleRequest(const char* buf, int bufSize, std::stringstream& ans
 
 ResponceCodes handleGet(std::stringstream& answerBody)
 {
-    std::cout << "GET handled" << std::endl;
+    answerBody  << "<html>"
 
-    answerBody << "qwe qwe 123";
+                << "<head><title>done</title></head>"
 
-    return ResponceCodes::_200;
+                << "<body>"
+                << "<font color=\"green\" face=\"arial\" size=\"6\">"
+                << "You sent GET request to fetch data from server but server has not data to return =)"
+                << "</font>"
+                << "</body>"
+
+                << "</html>";
+
+    return ResponceCodes::_100;
 }
 
 ResponceCodes handlePut(std::stringstream& answerBody)
 {
-    std::cout << "PUT handled" << std::endl;
+    answerBody << "<html>"
+
+        << "<head><title>done</title></head>"
+
+        << "<body>"
+        << "<font color=\"green\" face=\"arial\" size=\"6\">"
+        << "You sent PUT request to replace data on server but there nothing to replace =)"
+        << "</font>"
+        << "</body>"
+
+        << "</html>";
 
     return ResponceCodes::_200;
 }
 
 ResponceCodes handlePost(std::stringstream& answerBody)
 {
-    std::cout << "POST handled" << std::endl;
+    answerBody << "<html>"
+
+        << "<head><title>done</title></head>"
+
+        << "<body>"
+        << "<font color=\"green\" face=\"arial\" size=\"6\">"
+        << "You sent POST request to change data on server but server has not data =)"
+        << "</font>"
+        << "</body>"
+
+        << "</html>";
 
     return ResponceCodes::_200;
 }
 
 ResponceCodes handleDelete(std::stringstream& answerBody)
 {
-    std::cout << "DELETE handled" << std::endl;
+    answerBody << "<html>"
+
+        << "<head><title>done</title></head>"
+
+        << "<body>"
+        << "<font color=\"green\" face=\"arial\" size=\"6\">"
+        << "You sent DELETE request to delete data on server but server has not data =)"
+        << "</font>"
+        << "</body>"
+
+        << "</html>";
 
     return ResponceCodes::_200;
 }
@@ -198,29 +231,53 @@ void sendAnswer(ResponceCodes code, int clientSocket, std::stringstream& answerB
 
     if (code == ResponceCodes::_100)
     {
-
+        totalAnswer << "HTTP/1.1 100 Continue\r\n"
+            << "Version: HTTP/1.1\r\n"
+            << "Server: random example from github\r\n"
+            << "Content-Type: text/html; charset=utf-8\r\n"
+            << "Content-Length: " << 12
+            << "\r\n\r\n"
+            << "100 Continue";
     }
     else if (code == ResponceCodes::_200)
     {
         totalAnswer << "HTTP/1.1 200 OK\r\n"
-            << "Version: HTTP/1.1\r\n"
-            << "Server: random example from github\r\n"
-            << "Content-Type: text/html; charset=utf-8\r\n"
-            << "Content-Length: " << answerBody.str().length()
-            << "\r\n\r\n"
-            << answerBody.str();
+                    << "Version: HTTP/1.1\r\n"
+                    << "Server: random example from github\r\n"
+                    << "Content-Type: text/html; charset=utf-8\r\n"
+                    << "Content-Length: " << answerBody.str().length()
+                    << "\r\n\r\n"
+                    << answerBody.str();
     }
     else if (code == ResponceCodes::_300)
     {
-
+        totalAnswer << "HTTP/1.1 300 Multiple choises\r\n"
+            << "Version: HTTP/1.1\r\n"
+            << "Server: random example from github\r\n"
+            << "Content-Type: text/html; charset=utf-8\r\n"
+            << "Content-Length: " << 20
+            << "\r\n\r\n"
+            << "300 Multiple choises";
     }
     else if (code == ResponceCodes::_400)
     {
-
+        totalAnswer << "HTTP/1.1 400 Bad request\r\n"
+            << "Version: HTTP/1.1\r\n"
+            << "Server: random example from github\r\n"
+            << "Content-Type: text/html; charset=utf-8\r\n"
+            << "Content-Length: " << 15
+            << "\r\n\r\n"
+            << "400 Bad request";
     }
     else if (code == ResponceCodes::_500)
     {
-
+        totalAnswer << "HTTP/1.1 500 Server error\r\n"
+            << "Version: HTTP/1.1\r\n"
+            << "Server: random example from github\r\n"
+            << "Content-Type: text/html; charset=utf-8\r\n"
+            << "Content-Length: " << 16
+            << "\r\n\r\n"
+            << "500 Server error";
     }
 
     send(clientSocket, totalAnswer.str().c_str(), totalAnswer.str().length(), 0);
