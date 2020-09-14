@@ -123,6 +123,7 @@ int main()
     }
 
 
+    // free resources
     closesocket(listenSocket);
     freeaddrinfo(addr);
     WSACleanup();
