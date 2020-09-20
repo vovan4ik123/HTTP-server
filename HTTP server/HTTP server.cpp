@@ -12,7 +12,7 @@
 
 enum class ResponceCodes
 {
-    _100, _200, _300, _400, _500
+    Code_100, Code_200, Code_300, Code_400, Code_500
 };
 
 ResponceCodes handleRequest(const char* buf, int bufSize, std::stringstream& answerBody);
@@ -69,8 +69,8 @@ int main()
     if (result == SOCKET_ERROR)
     {
         std::cout << "bind() error" << std::endl;
-        closesocket(listenSocket);
         freeaddrinfo(addr);
+        closesocket(listenSocket);
         WSACleanup();
         return result;
     }
@@ -80,46 +80,50 @@ int main()
     {
         std::cout << "listen() error" << std::endl;
         closesocket(listenSocket);
-        freeaddrinfo(addr);
-        WSACleanup();
-        return result;
-    }
-
-    // server handle only ONE request then shut down
-    // add loop while(1){accept....} for handling all time
-    int clientSocket = accept(listenSocket, NULL, NULL);
-    if (clientSocket == INVALID_SOCKET)
-    {
-        std::cout << "accept() error" << std::endl;
-        closesocket(listenSocket);
-        freeaddrinfo(addr);
         WSACleanup();
         return result;
     }
 
     const int maxRequestLength = 1024;
     char requestBuffer[maxRequestLength];
-    result = recv(clientSocket, requestBuffer, maxRequestLength, 0); // result will store nubmer of byte read
-    if (result == SOCKET_ERROR)
-    {
-        std::cout << "recv() error" << std::endl;
-        closesocket(listenSocket);
-        freeaddrinfo(addr);
-        WSACleanup();
-    }
-    else if (result == 0)
-    {
-        std::cout << "Connection was closed by client" << std::endl;
-    }
-    else if (result > 0)
-    {
-        requestBuffer[result] = '\0';
-        std::cout << requestBuffer << std::endl;
+    int clientSocket = INVALID_SOCKET;
 
-        std::stringstream answerBody;
-        ResponceCodes respCode = handleRequest(requestBuffer, result, answerBody);
+    // while(1){accept....} will handle all request while working
+    while (1)
+    {
+        clientSocket = accept(listenSocket, NULL, NULL);
+        if (clientSocket == INVALID_SOCKET)
+        {
+            std::cout << "accept() error" << std::endl;
+            closesocket(listenSocket);
+            WSACleanup();
+            return result;
+        }
 
-        sendAnswer(respCode, clientSocket, answerBody);
+        // TODO: try recv() info from socket and sendAnswer() in parallel task
+        // std::async(std::launch::async, methodToExecute... );
+        result = recv(clientSocket, requestBuffer, maxRequestLength, 0); // result will store nubmer of byte read
+        if (result == SOCKET_ERROR)
+        {
+            std::cout << "recv() error" << std::endl;
+            closesocket(clientSocket);
+        }
+        else if (result == 0)
+        {
+            std::cout << "Connection was closed by client" << std::endl;
+        }
+        else if (result > 0)
+        {
+            requestBuffer[result] = '\0';
+            std::cout << requestBuffer << std::endl;
+
+            std::stringstream answerBody;
+            ResponceCodes respCode = handleRequest(requestBuffer, result, answerBody);
+
+            sendAnswer(respCode, clientSocket, answerBody);
+
+            closesocket(clientSocket);
+        }
     }
 
 
@@ -138,7 +142,7 @@ ResponceCodes handleRequest(const char* buf, int bufSize, std::stringstream& ans
 
     if (methodName.find("POST") != std::string::npos)
     {
-        // POST ask change in state or side effects on the server.
+        // POST ask add new data to server.
         return handlePost(answerBody);
     }
     else if (methodName.find("PUT") != std::string::npos)
@@ -157,7 +161,7 @@ ResponceCodes handleRequest(const char* buf, int bufSize, std::stringstream& ans
         return handleGet(answerBody);
     }
 
-    return ResponceCodes::_500;
+    return ResponceCodes::Code_500;
 }
 
 ResponceCodes handleGet(std::stringstream& answerBody)
@@ -174,7 +178,7 @@ ResponceCodes handleGet(std::stringstream& answerBody)
 
                 << "</html>";
 
-    return ResponceCodes::_200;
+    return ResponceCodes::Code_200;
 }
 
 ResponceCodes handlePut(std::stringstream& answerBody)
@@ -185,13 +189,13 @@ ResponceCodes handlePut(std::stringstream& answerBody)
 
         << "<body>"
         << "<font color=\"green\" face=\"arial\" size=\"6\">"
-        << "You sent PUT request to replace data on server but there nothing to replace =)"
+        << "You sent PUT request to add data on server but this served does not keep data =)"
         << "</font>"
         << "</body>"
 
         << "</html>";
 
-    return ResponceCodes::_200;
+    return ResponceCodes::Code_200;
 }
 
 ResponceCodes handlePost(std::stringstream& answerBody)
@@ -208,7 +212,7 @@ ResponceCodes handlePost(std::stringstream& answerBody)
 
         << "</html>";
 
-    return ResponceCodes::_200;
+    return ResponceCodes::Code_200;
 }
 
 ResponceCodes handleDelete(std::stringstream& answerBody)
@@ -225,14 +229,14 @@ ResponceCodes handleDelete(std::stringstream& answerBody)
 
         << "</html>";
 
-    return ResponceCodes::_200;
+    return ResponceCodes::Code_200;
 }
 
 void sendAnswer(ResponceCodes code, int clientSocket, std::stringstream& answerBody)
 {
     std::stringstream totalAnswer;
 
-    if (code == ResponceCodes::_100)
+    if (code == ResponceCodes::Code_100)
     {
         totalAnswer << "HTTP/1.1 100 Continue\r\n"
             << "Version: HTTP/1.1\r\n"
@@ -242,7 +246,7 @@ void sendAnswer(ResponceCodes code, int clientSocket, std::stringstream& answerB
             << "\r\n\r\n"
             << "100 Continue";
     }
-    else if (code == ResponceCodes::_200)
+    else if (code == ResponceCodes::Code_200)
     {
         totalAnswer << "HTTP/1.1 200 OK\r\n"
                     << "Version: HTTP/1.1\r\n"
@@ -252,7 +256,7 @@ void sendAnswer(ResponceCodes code, int clientSocket, std::stringstream& answerB
                     << "\r\n\r\n"
                     << answerBody.str();
     }
-    else if (code == ResponceCodes::_300)
+    else if (code == ResponceCodes::Code_300)
     {
         totalAnswer << "HTTP/1.1 300 Multiple choises\r\n"
             << "Version: HTTP/1.1\r\n"
@@ -262,7 +266,7 @@ void sendAnswer(ResponceCodes code, int clientSocket, std::stringstream& answerB
             << "\r\n\r\n"
             << "300 Multiple choises";
     }
-    else if (code == ResponceCodes::_400)
+    else if (code == ResponceCodes::Code_400)
     {
         totalAnswer << "HTTP/1.1 400 Bad request\r\n"
             << "Version: HTTP/1.1\r\n"
@@ -272,7 +276,7 @@ void sendAnswer(ResponceCodes code, int clientSocket, std::stringstream& answerB
             << "\r\n\r\n"
             << "400 Bad request";
     }
-    else if (code == ResponceCodes::_500)
+    else if (code == ResponceCodes::Code_500)
     {
         totalAnswer << "HTTP/1.1 500 Server error\r\n"
             << "Version: HTTP/1.1\r\n"
